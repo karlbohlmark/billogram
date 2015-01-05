@@ -5,10 +5,34 @@ var promisify = Promise.promisify;
 var url = require("url");
 var https = require("https")
 
+var API_BASE = 'https://billogram.com/api/v2'
+var API_BASE_SANDBOX = 'https://sandbox.billogram.com/api/v2'
+
 module.exports = BillogramClient
 
-function BillogramClient(conf) {
+function BillogramClient(config) {
+    requireParameter("config", config)
+    requireParameter("config.username", config.username)
+    requireParameter("config.password", config.password)
+
+    if (!conf.baseUrl) {
+        conf.baseUrl = conf.sandbox ? API_BASE_SANDBOX : API_BASE;
+    }
+    if (typeof conf.baseUrl == 'string') {
+        conf.baseUrl = url.parse(conf.baseUrl)
+    }
+    if (!(this instanceof BillogramClient)) {
+        return new BillogramClient(conf);
+    }
     this.conf = conf;
+}
+
+function requireParameter(name, val) {
+    if (typeof val == "undefined") {
+        var err = new Error("Missing required parameter: " + name);
+        Error.captureStackTrace(err, arguments.callee.caller);
+        throw err;
+    }
 }
 
 BillogramClient.prototype.createInvoice = createInvoice
@@ -45,7 +69,7 @@ function sendRequest(method, path, body) {
       hostname: hostname,
       path: basePath + path,
       method: method,
-      auth: conf.user + ":" + conf.pass,
+      auth: conf.username + ":" + conf.password,
       headers: {
         'Content-Type': 'application/json'
       }
